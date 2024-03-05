@@ -1,0 +1,29 @@
+[package]
+name = "unc-account-id-fuzz"
+version = "0.0.0"
+authors = ["Unc Inc <hello@nearprotocol.com>"]
+edition = "2021"
+repository = "https://github.com/near/near-account-id"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = ">=0.2.0, <0.5", features = ["arbitrary-derive"] }
+borsh = { version = "0.10", features = ["rc"] }
+serde_json = "1.0.25"
+near-account-id = { path = ".." }
+
+[[bin]]
+name = "serde"
+path = "fuzz_targets/serde.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "borsh"
+path = "fuzz_targets/borsh.rs"
+test = false
+doc = false
