@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0](https://github.com/jong-un-crypto/unc-account-id-rs/releases/tag/v0.1.0) - 2024-03-05
+
+### Other
+- defalut git token
+- unc account id init
+
 ## 1.0.0 - 2023-12-22
 
 This is the first stable release of near-account-id crate!
