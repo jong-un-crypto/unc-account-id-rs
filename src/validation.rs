@@ -1,15 +1,15 @@
 use crate::{ParseAccountError, ParseErrorKind};
 
-/// Shortest valid length for a NEAR Account ID.
+/// Shortest valid length for a Utility Account ID.
 pub const MIN_LEN: usize = 2;
-/// Longest valid length for a NEAR Account ID.
+/// Longest valid length for a Utility Account ID.
 pub const MAX_LEN: usize = 64;
 
 pub const fn validate_const(account_id: &str) {
     const fn validate_format_const(id: &[u8], idx: usize, current_char_is_separator: bool) {
         if idx >= id.len() {
             if current_char_is_separator {
-                panic!("NEAR Account ID cannot end with char separator (-, _, .)");
+                panic!("Utility Account ID cannot end with char separator (-, _, .)");
             }
             return;
         }
@@ -18,23 +18,23 @@ pub const fn validate_const(account_id: &str) {
             b'a'..=b'z' | b'0'..=b'9' => validate_format_const(id, idx + 1, false),
             b'-' | b'_' | b'.' => {
                 if current_char_is_separator {
-                    panic!("NEAR Account ID cannot contain redundant separator (-, _, .)")
+                    panic!("Utility Account ID cannot contain redundant separator (-, _, .)")
                 } else if idx == 0 {
-                    panic!("NEAR Account ID cannot start with char separator (-, _, .)")
+                    panic!("Utility Account ID cannot start with char separator (-, _, .)")
                 } else {
                     validate_format_const(id, idx + 1, true)
                 }
             }
             _ => panic!(
-                "NEAR Account ID cannot contain invalid chars (only a-z, 0-9, -, _, and . are allowed)"
+                "Utility Account ID cannot contain invalid chars (only a-z, 0-9, -, _, and . are allowed)"
             ),
         }
     }
 
     if account_id.len() < MIN_LEN {
-        panic!("NEAR Account ID is too short")
+        panic!("Utility Account ID is too short")
     } else if account_id.len() > MAX_LEN {
-        panic!("NEAR Account ID is too long")
+        panic!("Utility Account ID is too long")
     }
 
     validate_format_const(account_id.as_bytes(), 0, false);
@@ -52,8 +52,6 @@ pub fn validate(account_id: &str) -> Result<(), ParseAccountError> {
             char: None,
         })
     } else {
-        // Adapted from https://github.com/near/near-sdk-rs/blob/fd7d4f82d0dfd15f824a1cf110e552e940ea9073/near-sdk/src/environment/env.rs#L819
-
         // NOTE: We don't want to use Regex here, because it requires extra time to compile it.
         // The valid account ID regex is /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/
         // Instead the implementation is based on the previous character checks.
@@ -99,7 +97,7 @@ pub fn is_eth_implicit(account_id: &str) -> bool {
         && account_id[2..].as_bytes().iter().all(|b| matches!(b, b'a'..=b'f' | b'0'..=b'9'))
 }
 
-pub fn is_near_implicit(account_id: &str) -> bool {
+pub fn is_valid_implicit(account_id: &str) -> bool {
     account_id.len() == 64
         && account_id
             .as_bytes()

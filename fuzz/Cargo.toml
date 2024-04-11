@@ -1,9 +1,9 @@
 [package]
 name = "unc-account-id-fuzz"
 version = "0.0.0"
-authors = ["Unc Inc <hello@nearprotocol.com>"]
+authors = ["Utility Inc <hello@unc.com>"]
 edition = "2021"
-repository = "https://github.com/near/near-account-id"
+repository = "https://github.com/utility/unc-account-id"
 license = "MIT OR Apache-2.0"
 publish = false
 

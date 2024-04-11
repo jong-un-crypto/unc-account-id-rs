@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Write;
 
-/// An error which can be returned when parsing a NEAR Account ID.
+/// An error which can be returned when parsing a Utility Account ID.
 #[derive(Eq, Clone, Debug, PartialEq)]
 pub struct ParseAccountError {
     pub(crate) kind: ParseErrorKind,
@@ -51,7 +51,7 @@ pub enum ParseErrorKind {
     ///
     /// This variant would be returned if the Account ID contains an upper-case character, non-separating symbol or space.
     ///
-    /// Cases: `ƒelicia.near`, `user@app.com`, `Emily.near`.
+    /// Cases: `ƒelicia.unc`, `user@app.com`, `Emily.unc`.
     InvalidChar,
 }
 

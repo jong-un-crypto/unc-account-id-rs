@@ -19,7 +19,7 @@ use crate::{AccountId, ParseAccountError};
 /// use std::convert::{TryFrom, TryInto};
 ///
 /// // Construction
-/// let alice = AccountIdRef::new("alice.near").unwrap();
+/// let alice = AccountIdRef::new("alice.unc").unwrap();
 /// assert!(AccountIdRef::new("invalid.").is_err());
 /// ```
 ///
@@ -38,28 +38,27 @@ pub struct AccountIdRef(pub(crate) str);
 /// [`AccountIdRef`]: struct.AccountIdRef.html
 #[derive(PartialEq)]
 pub enum AccountType {
-    /// Any valid account, that is neither NEAR-implicit nor ETH-implicit.
-    NamedAccount,
     /// An account with 64 characters long hexadecimal address.
-    NearImplicitAccount,
+    UtilityAccount,
     /// An account which address starts with '0x', followed by 40 hex characters.
-    EthImplicitAccount,
+    EthAccount,
+    Reserved,
 }
 
 impl AccountType {
-    pub fn is_implicit(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         match &self {
-            Self::NearImplicitAccount => true,
-            Self::EthImplicitAccount => true,
-            Self::NamedAccount => false,
+            Self::UtilityAccount => true,
+            Self::EthAccount => true,
+            Self::Reserved => false,
         }
     }
 }
 
 impl AccountIdRef {
-    /// Shortest valid length for a NEAR Account ID.
+    /// Shortest valid length for a Utility Account ID.
     pub const MIN_LEN: usize = crate::validation::MIN_LEN;
-    /// Longest valid length for a NEAR Account ID.
+    /// Longest valid length for a Utility Account ID.
     pub const MAX_LEN: usize = crate::validation::MAX_LEN;
 
     /// Construct a [`&AccountIdRef`](AccountIdRef) from a string reference.
@@ -79,7 +78,7 @@ impl AccountIdRef {
     /// This constructor will panic if validation fails.
     /// ```rust
     /// use unc_account_id::AccountIdRef;
-    /// const ALICE: &AccountIdRef = AccountIdRef::new_or_panic("alice.near");
+    /// const ALICE: &AccountIdRef = AccountIdRef::new_or_panic("alice.unc");
     /// ```
     pub const fn new_or_panic(id: &str) -> &Self {
         crate::validation::validate_const(id);
@@ -90,10 +89,10 @@ impl AccountIdRef {
     /// Construct a [`&AccountIdRef`](AccountIdRef) from a string reference without validating the address.
     /// It is the responsibility of the caller to ensure the account ID is valid.
     ///
-    /// For more information, read: <https://docs.near.org/docs/concepts/account#account-id-rules>
+    /// For more information, read: <https://docs.unc.org/docs/concepts/account#account-id-rules>
     pub(crate) fn new_unvalidated<S: AsRef<str> + ?Sized>(id: &S) -> &Self {
         let id = id.as_ref();
-        // In nearcore, due to legacy reasons, AccountId construction and validation are separated.
+        // In unccore, due to legacy reasons, AccountId construction and validation are separated.
         // In order to avoid protocol change, `internal_unstable` feature was implemented and it is
         // expected that AccountId might be invalid and it will be explicitly validated at the
         // later stage.
@@ -116,94 +115,46 @@ impl AccountIdRef {
     /// ```
     /// use unc_account_id::AccountIdRef;
     ///
-    /// let carol = AccountIdRef::new("carol.near").unwrap();
-    /// assert_eq!("carol.near", carol.as_str());
+    /// let carol = AccountIdRef::new("carol.unc").unwrap();
+    /// assert_eq!("carol.unc", carol.as_str());
     /// ```
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
-    /// Returns `true` if the account ID is a top-level NEAR Account ID.
+    /// Returns `AccountType::EthAccount` if the `AccountId` is a 40 characters long hexadecimal prefixed with '0x'.
+    /// Returns `AccountType::Un cImplicitAccount` if the `AccountId` is a 64 characters long hexadecimal.
+    /// Otherwise, returns `AccountType::Reserved`.
     ///
-    /// See [Top-level Accounts](https://docs.near.org/docs/concepts/account#top-level-accounts).
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use unc_account_id::AccountIdRef;
-    ///
-    /// let near_tla = AccountIdRef::new("near").unwrap();
-    /// assert!(near_tla.is_top_level());
-    ///
-    /// // "alice.near" is a sub account of "near" account
-    /// let alice = AccountIdRef::new("alice.near").unwrap();
-    /// assert!(!alice.is_top_level());
-    /// ```
-    pub fn is_top_level(&self) -> bool {
-        !self.is_system() && !self.0.contains('.')
-    }
-
-    /// Returns `true` if the `AccountId` is a direct sub-account of the provided parent account.
-    ///
-    /// See [Subaccounts](https://docs.near.org/docs/concepts/account#subaccounts).
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use unc_account_id::AccountId;
-    ///
-    /// let near_tla: AccountId = "near".parse().unwrap();
-    /// assert!(near_tla.is_top_level());
-    ///
-    /// let alice: AccountId = "alice.near".parse().unwrap();
-    /// assert!(alice.is_sub_account_of(&near_tla));
-    ///
-    /// let alice_app: AccountId = "app.alice.near".parse().unwrap();
-    ///
-    /// // While app.alice.near is a sub account of alice.near,
-    /// // app.alice.near is not a sub account of near
-    /// assert!(alice_app.is_sub_account_of(&alice));
-    /// assert!(!alice_app.is_sub_account_of(&near_tla));
-    /// ```
-    pub fn is_sub_account_of(&self, parent: &AccountIdRef) -> bool {
-        self.0
-            .strip_suffix(parent.as_str())
-            .and_then(|s| s.strip_suffix('.'))
-            .map_or(false, |s| !s.contains('.'))
-    }
-
-    /// Returns `AccountType::EthImplicitAccount` if the `AccountId` is a 40 characters long hexadecimal prefixed with '0x'.
-    /// Returns `AccountType::NearImplicitAccount` if the `AccountId` is a 64 characters long hexadecimal.
-    /// Otherwise, returns `AccountType::NamedAccount`.
-    ///
-    /// See [Implicit-Accounts](https://docs.near.org/docs/concepts/account#implicit-accounts).
+    /// See [Implicit-Accounts](https://docs.unc.org/docs/concepts/account#implicit-accounts).
     ///
     /// ## Examples
     ///
     /// ```
     /// use unc_account_id::{AccountId, AccountType};
     ///
-    /// let alice: AccountId = "alice.near".parse().unwrap();
-    /// assert!(alice.get_account_type() == AccountType::NamedAccount);
+    /// let alice: AccountId = "alice.unc".parse().unwrap();
+    /// assert!(alice.get_account_type() == AccountType::Reserved);
     ///
     /// let eth_rando = "0xb794f5ea0ba39494ce839613fffba74279579268"
     ///     .parse::<AccountId>()
     ///     .unwrap();
-    /// assert!(eth_rando.get_account_type() == AccountType::EthImplicitAccount);
+    /// assert!(eth_rando.get_account_type() == AccountType::EthAccount);
     ///
-    /// let near_rando = "98793cd91a3f870fb126f66285808c7e094afcfc4eda8a970f6648cdf0dbd6de"
+    /// let unc_rando = "98793cd91a3f870fb126f66285808c7e094afcfc4eda8a970f6648cdf0dbd6de"
     ///     .parse::<AccountId>()
     ///     .unwrap();
-    /// assert!(near_rando.get_account_type() == AccountType::NearImplicitAccount);
+    /// assert!(unc_rando.get_account_type() == AccountType::UtilityAccount);
     /// ```
     pub fn get_account_type(&self) -> AccountType {
         if crate::validation::is_eth_implicit(self.as_str()) {
-            return AccountType::EthImplicitAccount;
+            return AccountType::EthAccount;
         }
-        if crate::validation::is_near_implicit(self.as_str()) {
-            return AccountType::NearImplicitAccount;
+        if crate::validation::is_valid_implicit(self.as_str()) {
+            return AccountType::UtilityAccount;
         }
-        AccountType::NamedAccount
+        
+        AccountType::Reserved
     }
 
     /// Returns `true` if this `AccountId` is the system account.
@@ -215,7 +166,7 @@ impl AccountIdRef {
     /// ```
     /// use unc_account_id::AccountId;
     ///
-    /// let alice: AccountId = "alice.near".parse().unwrap();
+    /// let alice: AccountId = "alice.unc".parse().unwrap();
     /// assert!(!alice.is_system());
     ///
     /// let system: AccountId = "system".parse().unwrap();
@@ -234,16 +185,11 @@ impl AccountIdRef {
     ///
     /// ## Examples
     /// ```
-    /// use unc_account_id::AccountIdRef;
+    /// use unc_account_id::{AccountIdRef, AccountType};
+    /// 
+    /// let unc: &AccountIdRef = AccountIdRef::new_or_panic("unc");
     ///
-    /// let alice: &AccountIdRef = AccountIdRef::new_or_panic("alice.near");
-    /// let parent: &AccountIdRef = alice.get_parent_account_id().unwrap();
-    ///
-    /// assert!(alice.is_sub_account_of(parent));
-    ///
-    /// let near: &AccountIdRef = AccountIdRef::new_or_panic("near");
-    ///
-    /// assert!(near.get_parent_account_id().is_none());
+    /// assert!(unc.get_parent_account_id().is_none());
     ///
     /// let implicit: &AccountIdRef = AccountIdRef::new_or_panic("248e104d1d4764d713c4211c13808c8fc887869c580f4178e60538ac5c2a0b26");
     ///
@@ -460,7 +406,7 @@ mod tests {
             json_schema,
             serde_json::json!({
                     "$schema": "http://json-schema.org/draft-07/schema#",
-                    "description": "Account identifier. This is the human readable UTF-8 string which is used internally to index accounts on the network and their respective state.\n\nThis is the \"referenced\" version of the account ID. It is to [`AccountId`] what [`str`] is to [`String`], and works quite similarly to [`Path`]. Like with [`str`] and [`Path`], you can't have a value of type `AccountIdRef`, but you can have a reference like `&AccountIdRef` or `&mut AccountIdRef`.\n\nThis type supports zero-copy deserialization offered by [`serde`](https://docs.rs/serde/), but cannot do the same for [`borsh`](https://docs.rs/borsh/) since the latter does not support zero-copy.\n\n# Examples ``` use unc_account_id::{AccountId, AccountIdRef}; use std::convert::{TryFrom, TryInto};\n\n// Construction let alice = AccountIdRef::new(\"alice.near\").unwrap(); assert!(AccountIdRef::new(\"invalid.\").is_err()); ```\n\n[`FromStr`]: std::str::FromStr [`Path`]: std::path::Path",
+                    "description": "Account identifier. This is the human readable UTF-8 string which is used internally to index accounts on the network and their respective state.\n\nThis is the \"referenced\" version of the account ID. It is to [`AccountId`] what [`str`] is to [`String`], and works quite similarly to [`Path`]. Like with [`str`] and [`Path`], you can't have a value of type `AccountIdRef`, but you can have a reference like `&AccountIdRef` or `&mut AccountIdRef`.\n\nThis type supports zero-copy deserialization offered by [`serde`](https://docs.rs/serde/), but cannot do the same for [`borsh`](https://docs.rs/borsh/) since the latter does not support zero-copy.\n\n# Examples ``` use unc_account_id::{AccountId, AccountIdRef}; use std::convert::{TryFrom, TryInto};\n\n// Construction let alice = AccountIdRef::new(\"alice.unc\").unwrap(); assert!(AccountIdRef::new(\"invalid.\").is_err()); ```\n\n[`FromStr`]: std::str::FromStr [`Path`]: std::path::Path",
                     "title": "AccountIdRef",
                     "type": "string"
                 }
@@ -470,7 +416,7 @@ mod tests {
 
     #[test]
     fn test_err_kind_classification() {
-        let id = AccountIdRef::new("ErinMoriarty.near");
+        let id = AccountIdRef::new("ErinMoriarty.unc");
         debug_assert!(
             matches!(
                 id,
@@ -483,7 +429,7 @@ mod tests {
             id
         );
 
-        let id = AccountIdRef::new("-KarlUrban.near");
+        let id = AccountIdRef::new("-KarlUrban.unc");
         debug_assert!(
             matches!(
                 id,
@@ -509,7 +455,7 @@ mod tests {
             id
         );
 
-        let id = AccountIdRef::new("jack__Quaid.near");
+        let id = AccountIdRef::new("jack__Quaid.unc");
         debug_assert!(
             matches!(
                 id,
@@ -524,190 +470,26 @@ mod tests {
     }
 
     #[test]
-    fn test_is_valid_top_level_account_id() {
-        let ok_top_level_account_ids = &[
-            "aa",
-            "a-a",
-            "a-aa",
-            "100",
-            "0o",
-            "com",
-            "near",
-            "bowen",
-            "b-o_w_e-n",
-            "0o0ooo00oo00o",
-            "alex-skidanov",
-            "b-o_w_e-n",
-            "no_lols",
-            // ETH-implicit account
-            "0xb794f5ea0ba39494ce839613fffba74279579268",
-            // NEAR-implicit account
-            "0123456789012345678901234567890123456789012345678901234567890123",
-        ];
-        for account_id in ok_top_level_account_ids {
-            assert!(
-                AccountIdRef::new(account_id).map_or(false, |account_id| account_id.is_top_level()),
-                "Valid top level account id {:?} marked invalid",
-                account_id
-            );
-        }
-
-        let bad_top_level_account_ids = &[
-            "ƒelicia.near", // fancy ƒ!
-            "near.a",
-            "b.owen",
-            "bro.wen",
-            "a.ha",
-            "a.b-a.ra",
-            "some-complex-address@gmail.com",
-            "sub.buy_d1gitz@atata@b0-rg.c_0_m",
-            "over.9000",
-            "google.com",
-            "illia.cheapaccounts.near",
-            "10-4.8-2",
-            "a",
-            "A",
-            "Abc",
-            "-near",
-            "near-",
-            "-near-",
-            "near.",
-            ".near",
-            "near@",
-            "@near",
-            "неар",
-            "@@@@@",
-            "0__0",
-            "0_-_0",
-            "0_-_0",
-            "..",
-            "a..near",
-            "nEar",
-            "_bowen",
-            "hello world",
-            "abcdefghijklmnopqrstuvwxyz.abcdefghijklmnopqrstuvwxyz.abcdefghijklmnopqrstuvwxyz",
-            "01234567890123456789012345678901234567890123456789012345678901234",
-            // Valid regex and length, but reserved
-            "system",
-        ];
-        for account_id in bad_top_level_account_ids {
-            assert!(
-                !AccountIdRef::new(account_id)
-                    .map_or(false, |account_id| account_id.is_top_level()),
-                "Invalid top level account id {:?} marked valid",
-                account_id
-            );
-        }
-    }
-
-    #[test]
-    fn test_is_valid_sub_account_id() {
-        let ok_pairs = &[
-            ("test", "a.test"),
-            ("test-me", "abc.test-me"),
-            ("gmail.com", "abc.gmail.com"),
-            ("gmail.com", "abc-lol.gmail.com"),
-            ("gmail.com", "abc_lol.gmail.com"),
-            ("gmail.com", "bro-abc_lol.gmail.com"),
-            ("g0", "0g.g0"),
-            ("1g", "1g.1g"),
-            ("5-3", "4_2.5-3"),
-        ];
-        for (signer_id, sub_account_id) in ok_pairs {
-            assert!(
-                matches!(
-                    (AccountIdRef::new(signer_id), AccountIdRef::new(sub_account_id)),
-                    (Ok(signer_id), Ok(sub_account_id)) if sub_account_id.is_sub_account_of(signer_id)
-                ),
-                "Failed to create sub-account {:?} by account {:?}",
-                sub_account_id,
-                signer_id
-            );
-        }
-
-        let bad_pairs = &[
-            ("test", ".test"),
-            ("test", "test"),
-            ("test", "a1.a.test"),
-            ("test", "est"),
-            ("test", ""),
-            ("test", "st"),
-            ("test5", "ббб"),
-            ("test", "a-test"),
-            ("test", "etest"),
-            ("test", "a.etest"),
-            ("test", "retest"),
-            ("test-me", "abc-.test-me"),
-            ("test-me", "Abc.test-me"),
-            ("test-me", "-abc.test-me"),
-            ("test-me", "a--c.test-me"),
-            ("test-me", "a_-c.test-me"),
-            ("test-me", "a-_c.test-me"),
-            ("test-me", "_abc.test-me"),
-            ("test-me", "abc_.test-me"),
-            ("test-me", "..test-me"),
-            ("test-me", "a..test-me"),
-            ("gmail.com", "a.abc@gmail.com"),
-            ("gmail.com", ".abc@gmail.com"),
-            ("gmail.com", ".abc@gmail@com"),
-            ("gmail.com", "abc@gmail@com"),
-            ("test", "a@test"),
-            ("test_me", "abc@test_me"),
-            ("gmail.com", "abc@gmail.com"),
-            ("gmail@com", "abc.gmail@com"),
-            ("gmail.com", "abc-lol@gmail.com"),
-            ("gmail@com", "abc_lol.gmail@com"),
-            ("gmail@com", "bro-abc_lol.gmail@com"),
-            (
-                "gmail.com",
-                "123456789012345678901234567890123456789012345678901234567890@gmail.com",
-            ),
-            (
-                "123456789012345678901234567890123456789012345678901234567890",
-                "1234567890.123456789012345678901234567890123456789012345678901234567890",
-            ),
-            (
-                "b794f5ea0ba39494ce839613fffba74279579268",
-                // ETH-implicit account
-                "0xb794f5ea0ba39494ce839613fffba74279579268",
-            ),
-            ("aa", "ъ@aa"),
-            ("aa", "ъ.aa"),
-        ];
-        for (signer_id, sub_account_id) in bad_pairs {
-            assert!(
-                !matches!(
-                    (AccountIdRef::new(signer_id), AccountIdRef::new(sub_account_id)),
-                    (Ok(signer_id), Ok(sub_account_id)) if sub_account_id.is_sub_account_of(&signer_id)
-                ),
-                "Invalid sub-account {:?} created by account {:?}",
-                sub_account_id,
-                signer_id
-            );
-        }
-    }
-
-    #[test]
-    fn test_is_account_id_near_implicit() {
-        let valid_near_implicit_account_ids = &[
+    fn test_is_account_id_unc_implicit() {
+        let valid_unc_implicit_account_ids = &[
             "0000000000000000000000000000000000000000000000000000000000000000",
             "6174617461746174617461746174617461746174617461746174617461746174",
             "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "20782e20662e64666420482123494b6b6c677573646b6c66676a646b6c736667",
         ];
-        for valid_account_id in valid_near_implicit_account_ids {
+        for valid_account_id in valid_unc_implicit_account_ids {
             assert!(
                 matches!(
                     AccountIdRef::new(valid_account_id),
-                    Ok(account_id) if account_id.get_account_type() == AccountType::NearImplicitAccount
+                    Ok(account_id) if account_id.get_account_type() == AccountType::UtilityAccount
                 ),
                 "Account ID {} should be valid 64-len hex",
                 valid_account_id
             );
         }
 
-        let invalid_near_implicit_account_ids = &[
+        let invalid_unc_implicit_account_ids = &[
             "000000000000000000000000000000000000000000000000000000000000000",
             "6.74617461746174617461746174617461746174617461746174617461746174",
             "012-456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
@@ -715,13 +497,13 @@ mod tests {
             "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
             "00000000000000000000000000000000000000000000000000000000000000",
         ];
-        for invalid_account_id in invalid_near_implicit_account_ids {
+        for invalid_account_id in invalid_unc_implicit_account_ids {
             assert!(
                 !matches!(
                     AccountIdRef::new(invalid_account_id),
-                    Ok(account_id) if account_id.get_account_type() == AccountType::NearImplicitAccount
+                    Ok(account_id) if account_id.get_account_type() == AccountType::UtilityAccount
                 ),
-                "Account ID {} is not a NEAR-implicit account",
+                "Account ID {} is not a Utility-implicit account",
                 invalid_account_id
             );
         }
@@ -740,7 +522,7 @@ mod tests {
             assert!(
                 matches!(
                     valid_account_id.parse::<AccountId>(),
-                    Ok(account_id) if account_id.get_account_type() == AccountType::EthImplicitAccount
+                    Ok(account_id) if account_id.get_account_type() == AccountType::EthAccount
                 ),
                 "Account ID {} should be valid 42-len hex, starting with 0x",
                 valid_account_id
@@ -761,7 +543,7 @@ mod tests {
             assert!(
                 !matches!(
                     invalid_account_id.parse::<AccountId>(),
-                    Ok(account_id) if account_id.get_account_type() == AccountType::EthImplicitAccount
+                    Ok(account_id) if account_id.get_account_type() == AccountType::EthAccount
                 ),
                 "Account ID {} is not an ETH-implicit account",
                 invalid_account_id
@@ -778,7 +560,7 @@ mod tests {
             ("a_-b", None),
             ("ab_-c", Some("ab")),
             ("a", None),
-            ("miraclx.near", Some("miraclx.near")),
+            ("miraclx.unc", Some("miraclx.unc")),
             (
                 "01234567890123456789012345678901234567890123456789012345678901234",
                 None,

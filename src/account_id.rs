@@ -2,9 +2,9 @@ use std::{borrow::Cow, fmt, ops::Deref, str::FromStr};
 
 use crate::{AccountIdRef, ParseAccountError};
 
-/// NEAR Account Identifier.
+/// Utility Account Identifier.
 ///
-/// This is a unique, syntactically valid, human-readable account identifier on the NEAR network.
+/// This is a unique, syntactically valid, human-readable account identifier on the Utility network.
 ///
 /// [See the crate-level docs for information about validation.](index.html#account-id-rules)
 ///
@@ -15,9 +15,9 @@ use crate::{AccountIdRef, ParseAccountError};
 /// ```
 /// use unc_account_id::AccountId;
 ///
-/// let alice: AccountId = "alice.near".parse().unwrap();
+/// let alice: AccountId = "alice.unc".parse().unwrap();
 ///
-/// assert!("ƒelicia.near".parse::<AccountId>().is_err()); // (ƒ is not f)
+/// assert!("ƒelicia.unc".parse::<AccountId>().is_err()); // (ƒ is not f)
 /// ```
 #[derive(Eq, Ord, Hash, Clone, Debug, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -25,9 +25,9 @@ use crate::{AccountIdRef, ParseAccountError};
 pub struct AccountId(pub(crate) Box<str>);
 
 impl AccountId {
-    /// Shortest valid length for a NEAR Account ID.
+    /// Shortest valid length for a Utility Account ID.
     pub const MIN_LEN: usize = crate::validation::MIN_LEN;
-    /// Longest valid length for a NEAR Account ID.
+    /// Longest valid length for a Utility Account ID.
     pub const MAX_LEN: usize = crate::validation::MAX_LEN;
 
     /// Creates an `AccountId` without any validation checks.
@@ -46,17 +46,17 @@ impl AccountId {
     /// ```
     /// use unc_account_id::AccountId;
     ///
-    /// let alice = AccountId::new_unvalidated("alice.near".to_string());
+    /// let alice = AccountId::new_unvalidated("alice.unc".to_string());
     /// assert!(AccountId::validate(alice.as_str()).is_ok());
     /// ```
     #[doc(hidden)]
     #[cfg(feature = "internal_unstable")]
-    #[deprecated = "AccountId construction without validation is illegal since nearcore#4440"]
+    #[deprecated = "AccountId construction without validation is illegal"]
     pub fn new_unvalidated(account_id: String) -> Self {
         Self(account_id.into_boxed_str())
     }
 
-    /// Validates a string as a well-structured NEAR Account ID.
+    /// Validates a string as a well-structured Utility Account ID.
     ///
     /// Checks Account ID validity without constructing an `AccountId` instance.
     ///
@@ -65,11 +65,11 @@ impl AccountId {
     /// ```
     /// use unc_account_id::{AccountId, ParseErrorKind};
     ///
-    /// assert!(AccountId::validate("alice.near").is_ok());
+    /// assert!(AccountId::validate("alice.unc").is_ok());
     ///
     /// assert!(
     ///   matches!(
-    ///     AccountId::validate("ƒelicia.near"), // fancy ƒ!
+    ///     AccountId::validate("ƒelicia.unc"), // fancy ƒ!
     ///     Err(err) if err.kind() == &ParseErrorKind::InvalidChar
     ///   )
     /// );
@@ -355,7 +355,7 @@ mod tests {
             ("a_-b", None),
             ("ab_-c", Some("ab")),
             ("a", None),
-            ("miraclx.near", Some("miraclx.near")),
+            ("miraclx.unc", Some("miraclx.unc")),
             (
                 "01234567890123456789012345678901234567890123456789012345678901234",
                 None,
@@ -383,7 +383,7 @@ mod tests {
             json_schema,
             serde_json::json!({
                     "$schema": "http://json-schema.org/draft-07/schema#",
-                    "description": "NEAR Account Identifier.\n\nThis is a unique, syntactically valid, human-readable account identifier on the NEAR network.\n\n[See the crate-level docs for information about validation.](index.html#account-id-rules)\n\nAlso see [Error kind precedence](AccountId#error-kind-precedence).\n\n## Examples\n\n``` use unc_account_id::AccountId;\n\nlet alice: AccountId = \"alice.near\".parse().unwrap();\n\nassert!(\"ƒelicia.near\".parse::<AccountId>().is_err()); // (ƒ is not f) ```",
+                    "description": "Utility Account Identifier.\n\nThis is a unique, syntactically valid, human-readable account identifier on the Utility network.\n\n[See the crate-level docs for information about validation.](index.html#account-id-rules)\n\nAlso see [Error kind precedence](AccountId#error-kind-precedence).\n\n## Examples\n\n``` use unc_account_id::AccountId;\n\nlet alice: AccountId = \"alice.unc\".parse().unwrap();\n\nassert!(\"ƒelicia.unc\".parse::<AccountId>().is_err()); // (ƒ is not f) ```",
                     "title": "AccountId",
                     "type": "string"
                 }

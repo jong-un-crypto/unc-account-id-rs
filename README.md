@@ -1,33 +1,21 @@
 # unc-account-id
 
-This crate provides a type for representing a syntactically valid, unique account identifier on the [NEAR](https://near.org) network, according to the [NEAR Account ID](https://docs.near.org/concepts/basics/account#account-id-rules) rules.
+This crate provides a type for representing a syntactically valid, unique account identifier on the [Utility](https://unc.org) network, according to the [Utility Account ID](https://docs.unc.org/concepts/basics/account#account-id-rules) rules.
 
-[![crates.io](https://img.shields.io/crates/v/near-account-id?label=latest)](https://crates.io/crates/near-account-id)
-[![Documentation](https://docs.rs/near-account-id/badge.svg)](https://docs.rs/near-account-id)
-![MIT or Apache 2.0 licensed](https://img.shields.io/crates/l/near-account-id.svg)
+[![crates.io](https://img.shields.io/crates/v/unc-account-id?label=latest)](https://crates.io/crates/unc-account-id)
+[![Documentation](https://docs.rs/unc-account-id/badge.svg)](https://docs.rs/unc-account-id)
 
 ## Usage
 
 ```rust
 use unc_account_id::AccountId;
 
-let alice: AccountId = "alice.near".parse()?;
+let alice: AccountId = "alice.unc".parse()?;
 
-assert!("ƒelicia.near".parse::<AccountId>().is_err()); // (ƒ is not f)
+assert!("ƒelicia.unc".parse::<AccountId>().is_err()); // (ƒ is not f)
 ```
 
-See the [docs](https://docs.rs/near-account-id) for more information.
-
-## License
-
-Licensed under either of
-
-- Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
-- MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
-
-at your option.
+See the [docs](https://docs.rs/unc-account-id) for more information.
 
 ## Minimum Supported Rust Version (MSRV)
 

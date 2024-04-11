@@ -1,4 +1,4 @@
-//! This crate provides a type for representing a syntactically valid, unique account identifier on the [NEAR](https://near.org) network.
+//! This crate provides a type for representing a syntactically valid, unique account identifier on the [Utility](https://unc.org) network.
 //!
 //! ## Account ID Rules
 //!
@@ -6,20 +6,20 @@
 //! - Maximum length is `64`
 //! - An **Account ID** consists of **Account ID parts** separated by `.`, example:
 //!   - `root` ✔
-//!   - `alice.near` ✔
+//!   - `alice.unc` ✔
 //!   - `app.stage.testnet` ✔
 //! - Must not start or end with separators (`_`, `-` or `.`):
 //!   - `_alice.` ✗
-//!   - `.bob.near-` ✗
+//!   - `.bob.unc-` ✗
 //! - Each part of the **Account ID** consists of lowercase alphanumeric symbols separated either by `_` or `-`, example:
-//!   - `ƒelicia.near` ✗ (`ƒ` is not `f`)
-//!   - `1_4m_n0t-al1c3.near` ✔
+//!   - `ƒelicia.unc` ✗ (`ƒ` is not `f`)
+//!   - `1_4m_n0t-al1c3.unc` ✔
 //! - Separators are not permitted to immediately follow each other, example:
-//!   - `alice..near` ✗
-//!   - `not-_alice.near` ✗
+//!   - `alice..unc` ✗
+//!   - `not-_alice.unc` ✗
 //! - An **Account ID** that is 64 characters long and consists of lowercase hex characters is a specific **implicit account ID**
 //!
-//! Learn more here: <https://docs.near.org/docs/concepts/account#account-id-rules>
+//! Learn more here: <https://docs.unc.org/docs/concepts/account#account-id-rules>
 //!
 //! Also see [Error kind precedence](AccountId#error-kind-precedence).
 //!
@@ -28,11 +28,11 @@
 //! ```
 //! use unc_account_id::{AccountIdRef, AccountId};
 //!
-//! const ALICE: &AccountIdRef = AccountIdRef::new_or_panic("alice.near");
+//! const ALICE: &AccountIdRef = AccountIdRef::new_or_panic("alice.unc");
 //!
-//! let alice: AccountId = "alice.near".parse().unwrap();
+//! let alice: AccountId = "alice.unc".parse().unwrap();
 //!
-//! assert!("ƒelicia.near".parse::<AccountId>().is_err()); // (ƒ is not f)
+//! assert!("ƒelicia.unc".parse::<AccountId>().is_err()); // (ƒ is not f)
 //! ```
 
 mod errors;
